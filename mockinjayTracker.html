@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0f0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MOCKINJAY TRACKER" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>MOCKINJAY TRACKER</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+    :root {
+      --green: #00ff41;
+      --green-dim: #00aa2b;
+      --green-dark: #003d0f;
+      --green-glow: rgba(0,255,65,0.15);
+      --bg: #050a05;
+      --bg2: #0a0f0a;
+      --amber: #ffb300;
+      --red: #ff2d2d;
+      --panel: rgba(0,255,65,0.05);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* SCANLINE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* SCREEN FLICKER */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: rgba(0,255,65,0.01);
+      pointer-events: none;
+      z-index: 999;
+      animation: flicker 8s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96% { opacity: 0.85; }
+      97% { opacity: 1; }
+      98% { opacity: 0.9; }
+    }
+
+    /* BOOT SCREEN */
+    #boot {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      gap: 16px;
+    }
+
+    #boot h1 {
+		font-family: 'Orbitron', monospace;
+		font-size: 1.4rem;
+		font-weight: 900;
+		letter-spacing: 4px;
+		color: var(--green);
+		text-shadow: 0 0 20px var(--green);
+		animation: pulse-glow 1s ease-in-out infinite alternate;
+		text-align: center;
+		width: 100%;
+	}
+
+    @keyframes pulse-glow {
+      from { text-shadow: 0 0 10px var(--green); }
+      to { text-shadow: 0 0 30px var(--green), 0 0 60px rgba(0,255,65,0.3); }
+    }
+
+    #boot-log {
+      font-size: 0.7rem;
+      color: var(--green-dim);
+      text-align: left;
+      width: 280px;
+      line-height: 1.8;
+    }
+
+    #boot-log .line { opacity: 0; animation: appear 0.1s forwards; }
+
+    @keyframes appear { to { opacity: 1; } }
+
+    #boot-bar-wrap {
+      width: 280px;
+      height: 4px;
+      background: var(--green-dark);
+      border: 1px solid var(--green-dim);
+    }
+
+    #boot-bar {
+      height: 100%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* MAIN APP */
+    #app {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #app.active { display: flex; }
+
+    /* TOP HUD */
+    #hud-top {
+      width: 100%;
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid rgba(0,255,65,0.2);
+      background: linear-gradient(180deg, rgba(0,20,0,0.8) 0%, transparent 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .hud-block { display: flex; flex-direction: column; gap: 2px; }
+    .hud-label { font-size: 0.55rem; color: var(--green-dim); letter-spacing: 2px; }
+    .hud-value { font-size: 0.85rem; color: var(--green); letter-spacing: 1px; }
+
+    #heading-display {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 15px var(--green);
+    }
+
+    /* COMPASS AREA */
+    #compass-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+    }
+
+    #compass-container {
+      position: relative;
+      width: min(90vw, 90vh - 200px);
+      height: min(90vw, 90vh - 200px);
+    }
+
+    /* OUTER RING */
+    #compass-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--green-dim);
+      box-shadow:
+        0 0 20px rgba(0,255,65,0.1),
+        inset 0 0 30px rgba(0,255,65,0.03);
+    }
+
+    /* RADAR SWEEP */
+    #radar-canvas {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+    }
+
+    /* COMPASS SVG */
+    #compass-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.15s ease-out;
+    }
+
+    /* CENTER DOT (player) */
+    #center-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,255,65,0.3), 0 0 15px var(--green);
+      z-index: 10;
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(0,255,65,0.3), 0 0 10px var(--green); }
+      50% { box-shadow: 0 0 0 8px rgba(0,255,65,0.1), 0 0 20px var(--green); }
+    }
+
+    /* WAYPOINT MARKERS */
+    .waypoint {
+      position: absolute;
+      width: 22px; height: 22px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      z-index: 8;
+      transition: all 0.3s ease;
+    }
+
+    .waypoint-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .waypoint-diamond {
+      width: 12px; height: 12px;
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber), 0 0 15px rgba(255,179,0,0.3);
+      transform: rotate(45deg);
+      animation: wp-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes wp-pulse {
+      0%, 100% { transform: rotate(45deg) scale(1); }
+      50% { transform: rotate(45deg) scale(1.3); }
+    }
+
+    .waypoint-label {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.6rem;
+      color: var(--amber);
+      white-space: nowrap;
+      text-shadow: 0 0 6px var(--amber);
+      letter-spacing: 1px;
+    }
+
+    .waypoint.near .waypoint-diamond {
+      background: var(--red);
+      box-shadow: 0 0 12px var(--red), 0 0 25px rgba(255,45,45,0.4);
+    }
+
+    .waypoint.near .waypoint-label { color: var(--red); text-shadow: 0 0 6px var(--red); }
+
+    /* NORTH INDICATOR (fixed, top of compass) */
+    #north-arrow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform-origin: center bottom;
+      width: 3px;
+      transform: translate(-50%, -100%);
+      z-index: 9;
+      pointer-events: none;
+    }
+
+    /* BOTTOM HUD */
+    #hud-bottom {
+      width: 100%;
+      padding: 10px 16px 20px;
+      border-top: 1px solid rgba(0,255,65,0.2);
+      background: linear-gradient(0deg, rgba(0,20,0,0.9) 0%, transparent 100%);
+      flex-shrink: 0;
+    }
+
+    #targets-list {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .target-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border: 1px solid rgba(0,255,65,0.3);
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--green-dim);
+      background: var(--panel);
+      transition: all 0.3s;
+    }
+
+    .target-chip.active { border-color: var(--amber); color: var(--amber); }
+    .target-chip.near { border-color: var(--red); color: var(--red); animation: chip-blink 0.5s ease-in-out infinite alternate; }
+    .target-chip.found { border-color: rgba(0,255,65,0.2); color: rgba(0,255,65,0.2); text-decoration: line-through; }
+
+    @keyframes chip-blink {
+      from { background: transparent; }
+      to { background: rgba(255,45,45,0.1); }
+    }
+
+    .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* STATUS BAR */
+    #status-bar {
+      text-align: center;
+      font-size: 0.6rem;
+      color: var(--green-dim);
+      letter-spacing: 2px;
+      margin-top: 6px;
+      height: 14px;
+    }
+
+    /* POPUP OVERLAY */
+    #popup-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #popup-overlay.active { display: flex; }
+
+    #popup-box {
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      background: var(--bg2);
+      border: 1px solid var(--green);
+      box-shadow: 0 0 40px rgba(0,255,65,0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #popup-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(0,255,65,0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,255,65,0.05);
+      flex-shrink: 0;
+    }
+
+    #popup-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--green);
+    }
+
+    #popup-close {
+      width: 30px; height: 30px;
+      border: 1px solid var(--green-dim);
+      background: transparent;
+      color: var(--green);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Share Tech Mono', monospace;
+      transition: all 0.2s;
+    }
+
+    #popup-close:hover { background: rgba(0,255,65,0.1); }
+
+    #popup-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #popup-pdf-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      min-height: 400px;
+    }
+
+    #popup-pdf-fallback {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 16px;
+      text-align: center;
+    }
+
+    #popup-pdf-fallback .dest-number {
+      font-family: 'Orbitron', monospace;
+      font-size: 5rem;
+      font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 30px var(--green);
+      line-height: 1;
+    }
+
+    #popup-pdf-fallback .dest-label {
+      font-size: 0.8rem;
+      color: var(--green-dim);
+      letter-spacing: 4px;
+    }
+
+    #popup-pdf-fallback .dest-coords {
+      font-size: 0.65rem;
+      color: rgba(0,255,65,0.4);
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+
+    #popup-footer {
+      padding: 12px 18px;
+      border-top: 1px solid rgba(0,255,65,0.3);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    #popup-confirm {
+      background: var(--green);
+      color: var(--bg);
+      border: none;
+      padding: 10px 40px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #popup-confirm:hover { box-shadow: 0 0 20px var(--green); }
+
+    /* VICTORY SCREEN */
+    #victory {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 300;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 24px;
+      padding: 40px;
+    }
+
+    #victory.active { display: flex; }
+
+    #victory-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: var(--green);
+      text-shadow: 0 0 30px var(--green), 0 0 60px rgba(0,255,65,0.3);
+      animation: victory-pulse 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes victory-pulse {
+      from { text-shadow: 0 0 20px var(--green); opacity: 0.9; }
+      to { text-shadow: 0 0 50px var(--green), 0 0 100px rgba(0,255,65,0.2); opacity: 1; }
+    }
+
+    #victory-subtitle {
+      font-size: 0.8rem;
+      color: var(--green-dim);
+      letter-spacing: 4px;
+    }
+
+    #victory-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .victory-chip {
+      border: 1px solid var(--green);
+      padding: 8px;
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--green);
+      text-align: center;
+      animation: chip-appear 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes chip-appear {
+      to { opacity: 1; }
+    }
+
+    #victory-decoration {
+      width: 200px;
+      height: 200px;
+      position: relative;
+    }
+
+    .v-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid var(--green);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: ring-expand 3s ease-in-out infinite;
+    }
+
+    .v-ring:nth-child(1) { width: 60px; height: 60px; animation-delay: 0s; }
+    .v-ring:nth-child(2) { width: 110px; height: 110px; animation-delay: 0.5s; }
+    .v-ring:nth-child(3) { width: 160px; height: 160px; animation-delay: 1s; }
+    .v-ring:nth-child(4) { width: 200px; height: 200px; animation-delay: 1.5s; }
+
+    @keyframes ring-expand {
+      0%, 100% { opacity: 0.8; box-shadow: inset 0 0 10px rgba(0,255,65,0.1); }
+      50% { opacity: 0.3; box-shadow: inset 0 0 20px rgba(0,255,65,0.2); }
+    }
+
+    .v-star {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Orbitron', monospace;
+      font-size: 1.5rem;
+      color: var(--green);
+      text-shadow: 0 0 20px var(--green);
+    }
+
+    /* PERMISSION SCREEN */
+    #permission-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 400;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    #permission-screen.active { display: flex; }
+
+    #permission-screen h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      letter-spacing: 3px;
+    }
+
+    #permission-screen p {
+      font-size: 0.75rem;
+      color: var(--green-dim);
+      line-height: 1.8;
+      letter-spacing: 1px;
+    }
+
+    #btn-start {
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 14px 40px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0,255,65,0.1);
+      transition: all 0.3s;
+    }
+
+    #btn-start:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 25px rgba(0,255,65,0.2); }
+
+    /* ACCURACY RING on compass */
+    .acc-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px dashed rgba(0,255,65,0.2);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* DIRECTION TICKS */
+    .dir-label {
+      position: absolute;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green);
+    }
+
+    /* GPS ERROR */
+    #gps-error {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,45,45,0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 8px 16px;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      z-index: 100;
+      display: none;
+    }
+
+    /* PROXIMITY RING (visual) */
+    .prox-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(255,45,45,0.3);
+      pointer-events: none;
+      animation: prox-expand 1.5s ease-out infinite;
+      z-index: 5;
+    }
+
+    @keyframes prox-expand {
+      0% { transform: translate(-50%,-50%) scale(0.8); opacity: 0.6; }
+      100% { transform: translate(-50%,-50%) scale(1.4); opacity: 0; }
+    }
+
+    /* OFF-COMPASS indicator */
+    .offscreen-arrow {
+      position: absolute;
+      width: 0; height: 0;
+      z-index: 9;
+    }
+
+    .offscreen-arrow::after {
+      content: '▲';
+      position: absolute;
+      color: var(--amber);
+      font-size: 14px;
+      text-shadow: 0 0 6px var(--amber);
+      transform: translate(-50%, -50%);
+      animation: arrow-pulse 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes arrow-pulse {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot">
+  <h1>MOCKINJAY TRACKER</h1>
+  <div id="boot-log"></div>
+  <div id="boot-bar-wrap"><div id="boot-bar"></div></div>
+</div>
+
+<!-- PERMISSION SCREEN -->
+<div id="permission-screen">
+  <h2>⊕ SISTEMA DI TRACCIAMENTO</h2>
+  <p>
+    Questa app richiede accesso a:<br><br>
+    📍 GPS — posizione in tempo reale<br>
+    🧭 Bussola — sensori di orientamento<br><br>
+    Assicurati di essere all'aperto<br>
+    per massima precisione GPS.
+  </p>
+  <button id="btn-start">INIZIA RICERCA</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- TOP HUD -->
+  <div id="hud-top">
+    <div class="hud-block">
+      <span class="hud-label">LAT</span>
+      <span class="hud-value" id="disp-lat">---.------</span>
+    </div>
+    <div class="hud-block" style="text-align:center">
+      <span class="hud-label">ROTTA</span>
+      <span id="heading-display">---°</span>
+    </div>
+    <div class="hud-block" style="text-align:right">
+      <span class="hud-label">LON</span>
+      <span class="hud-value" id="disp-lon">---.------</span>
+    </div>
+  </div>
+
+  <!-- COMPASS -->
+  <div id="compass-wrap">
+    <div id="compass-container">
+      <!-- Accuracy ring -->
+      <div class="acc-ring" id="acc-ring" style="width:60px;height:60px;opacity:0"></div>
+
+      <!-- Radar canvas (sweep animation) -->
+      <canvas id="radar-canvas"></canvas>
+
+      <!-- Outer ring -->
+      <div id="compass-ring"></div>
+
+      <!-- Compass rose (rotates) -->
+      <svg id="compass-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Concentric rings -->
+        <circle cx="200" cy="200" r="190" fill="none" stroke="rgba(0,255,65,0.08)" stroke-width="1"/>
+        <circle cx="200" cy="200" r="155" fill="none" stroke="rgba(0,255,65,0.06)" stroke-width="1"/>
+        <circle cx="200" cy="200" r="115" fill="none" stroke="rgba(0,255,65,0.06)" stroke-width="1"/>
+        <circle cx="200" cy="200" r="75" fill="none" stroke="rgba(0,255,65,0.08)" stroke-width="1"/>
+
+        <!-- Degree ticks (every 5°) -->
+        <g id="ticks"></g>
+
+        <!-- Cardinal labels -->
+        <g filter="url(#glow)">
+          <text x="200" y="24" text-anchor="middle" fill="#ff2d2d" font-family="Orbitron,monospace" font-size="22" font-weight="900" letter-spacing="1">N</text>
+          <text x="200" y="392" text-anchor="middle" fill="#00ff41" font-family="Orbitron,monospace" font-size="18" font-weight="700">S</text>
+          <text x="15" y="207" text-anchor="middle" fill="#00ff41" font-family="Orbitron,monospace" font-size="18" font-weight="700">W</text>
+          <text x="388" y="207" text-anchor="middle" fill="#00ff41" font-family="Orbitron,monospace" font-size="18" font-weight="700">E</text>
+
+          <!-- Intercardinals -->
+          <text x="329" y="75" text-anchor="middle" fill="rgba(0,255,65,0.5)" font-family="Orbitron,monospace" font-size="11">NE</text>
+          <text x="75" y="75" text-anchor="middle" fill="rgba(0,255,65,0.5)" font-family="Orbitron,monospace" font-size="11">NW</text>
+          <text x="329" y="335" text-anchor="middle" fill="rgba(0,255,65,0.5)" font-family="Orbitron,monospace" font-size="11">SE</text>
+          <text x="75" y="335" text-anchor="middle" fill="rgba(0,255,65,0.5)" font-family="Orbitron,monospace" font-size="11">SW</text>
+        </g>
+
+        <!-- Degree markings every 30° -->
+        <g fill="rgba(0,255,65,0.4)" font-family="Share Tech Mono,monospace" font-size="9" text-anchor="middle">
+          <text x="200" y="50">360</text>
+          <text x="295" y="75">30</text>
+          <text x="360" y="155">60</text>
+          <text x="375" y="207">90</text>
+          <text x="360" y="262">120</text>
+          <text x="295" y="335">150</text>
+          <text x="200" y="368">180</text>
+          <text x="113" y="335">210</text>
+          <text x="48" y="262">240</text>
+          <text x="33" y="207">270</text>
+          <text x="48" y="155">300</text>
+          <text x="113" y="75">330</text>
+        </g>
+
+        <!-- North arrow (inside rose, rotates with it) -->
+        <polygon points="200,40 192,200 208,200" fill="#ff2d2d" opacity="0.7" filter="url(#glow)"/>
+        <polygon points="200,360 192,200 208,200" fill="#00ff41" opacity="0.5"/>
+      </svg>
+
+      <!-- Waypoint markers (DOM, absolute positioned) -->
+      <div id="waypoints-layer"></div>
+
+      <!-- Player dot (always center, does not rotate) -->
+      <div id="center-dot"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM HUD -->
+  <div id="hud-bottom">
+    <div id="targets-list"></div>
+    <div id="status-bar">IN ATTESA DI SEGNALE GPS...</div>
+  </div>
+</div>
+
+<!-- GPS ERROR -->
+<div id="gps-error">⚠ SEGNALE GPS PERSO</div>
+
+<!-- POPUP -->
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div id="popup-header">
+      <span id="popup-title">PUNTO 1</span>
+      <button id="popup-close">✕</button>
+    </div>
+    <div id="popup-content">
+      <div id="popup-pdf-fallback">
+        <div class="dest-number" id="popup-number">1</div>
+        <div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
+        <div class="dest-coords" id="popup-coords"></div>
+      </div>
+    </div>
+    <div id="popup-footer">
+      <button id="popup-confirm">CONFERMA OBIETTIVO</button>
+    </div>
+  </div>
+</div>
+
+<!-- VICTORY -->
+<div id="victory">
+  <div id="victory-decoration">
+    <div class="v-ring"></div><div class="v-ring"></div>
+    <div class="v-ring"></div><div class="v-ring"></div>
+    <div class="v-star">★</div>
+  </div>
+  <div id="victory-title">MISSIONE COMPLETATA</div>
+  <div id="victory-subtitle">TUTTI GLI OBIETTIVI RAGGIUNTI</div>
+  <div id="victory-grid"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIGURAZIONE DESTINAZIONI
+// ═══════════════════════════════════════════════
+const DESTINATIONS = [
+  { id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d" },
+  { id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00" },
+  { id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff" },
+  { id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41" },
+  { id: 5, name: "PUNTO 5", lat: 41.456450, lon: 13.666765, color: "#cc44ff" },
+  { id: 6, name: "PUNTO 6", lat: 41.458565, lon: 13.664333, color: "#ffffff" },
+];
+
+// Soglie prossimità (metri)
+const PROXIMITY_NEAR   = 15;   // audio inizia
+const PROXIMITY_MEDIUM = 10;   // volume 60%
+const PROXIMITY_CLOSE  = 5;    // volume 100%
+const ARRIVAL_RADIUS   = 4.5;  // arrivo confermato
+
+// Raggio massimo bussola in metri (scala visiva)
+const COMPASS_SCALE_M  = 80;
+
+// ═══════════════════════════════════════════════
+// STATO
+// ═══════════════════════════════════════════════
+let userLat = null, userLon = null;
+let heading = 0; // gradi da nord, 0=nord
+let foundIds = new Set();
+let activePopupId = null;
+let watchId = null;
+let compassSize = 0;
+let compassRadius = 0;
+
+// ═══════════════════════════════════════════════
+// BOOT SEQUENCE
+// ═══════════════════════════════════════════════
+const bootLines = [
+  "AVVIO SISTEMA...",
+  "CARICAMENTO MODULI GPS...",
+  "INIZIALIZZAZIONE BUSSOLA...",
+  "CARICAMENTO MAPPE TATTICHE...",
+  "CRITTOGRAFIA ATTIVATA...",
+  "SISTEMA PRONTO.",
+];
+
+async function runBoot() {
+  const log = document.getElementById('boot-log');
+  const bar = document.getElementById('boot-bar');
+
+  for (let i = 0; i < bootLines.length; i++) {
+    await delay(300 + Math.random() * 200);
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.textContent = '> ' + bootLines[i];
+    line.style.animationDelay = '0s';
+    log.appendChild(line);
+    bar.style.width = ((i + 1) / bootLines.length * 100) + '%';
+  }
+
+  await delay(600);
+  document.getElementById('boot').style.opacity = '0';
+  document.getElementById('boot').style.transition = 'opacity 0.5s';
+  await delay(500);
+  document.getElementById('boot').style.display = 'none';
+  document.getElementById('permission-screen').classList.add('active');
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════
+document.getElementById('btn-start').addEventListener('click', startMission);
+
+function startMission() {
+  document.getElementById('permission-screen').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+
+  initAudio();
+  initCompass();
+  startGPS();
+  startCompassSensor();
+  initRadar();
+  buildTargetList();
+  buildWaypoints();
+  resizeCompass();
+}
+
+// ═══════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════
+function resizeCompass() {
+  const container = document.getElementById('compass-container');
+  const r = container.getBoundingClientRect();
+  compassSize = r.width;
+  compassRadius = compassSize / 2;
+  initRadar();
+}
+
+window.addEventListener('resize', resizeCompass);
+
+// ═══════════════════════════════════════════════
+// AUDIO — secret.mp3 con volume per prossimità
+// ═══════════════════════════════════════════════
+let proximityAudio = null;
+
+function initAudio() {
+  proximityAudio = new Audio('./secret.mp3');
+  proximityAudio.loop = true;
+  proximityAudio.volume = 0;
+  proximityAudio.preload = 'auto';
+  proximityAudio.load();
+}
+
+function updateProximityAudio(id, distM) {
+  if (!proximityAudio) return;
+
+  let vol = 0;
+  if (distM <= PROXIMITY_CLOSE)       vol = 1.0;
+  else if (distM <= PROXIMITY_MEDIUM) vol = 0.6;
+  else if (distM <= PROXIMITY_NEAR)   vol = 0.3;
+
+  if (vol === 0) {
+    stopSound(id);
+    return;
+  }
+
+  if (proximityAudio.paused) {
+    proximityAudio.play().catch(e => console.warn('Audio bloccato:', e));
+  }
+  proximityAudio.volume = vol;
+}
+
+function stopSound(id) {
+  if (!proximityAudio) return;
+  const fadeOut = setInterval(() => {
+    if (proximityAudio.volume > 0.05) {
+      proximityAudio.volume = Math.max(0, proximityAudio.volume - 0.05);
+    } else {
+      proximityAudio.volume = 0;
+      proximityAudio.pause();
+      proximityAudio.currentTime = 0;
+      clearInterval(fadeOut);
+    }
+  }, 50);
+}
+
+function stopAllSounds() {
+  if (!proximityAudio) return;
+  proximityAudio.volume = 0;
+  proximityAudio.pause();
+  proximityAudio.currentTime = 0;
+}
+
+// ═══════════════════════════════════════════════
+// GPS
+// ═══════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('status-bar').textContent = 'GPS NON DISPONIBILE';
+    return;
+  }
+
+  const opts = { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 };
+
+  watchId = navigator.geolocation.watchPosition(onGPS, onGPSError, opts);
+}
+
+function onGPS(pos) {
+  userLat = pos.coords.latitude;
+  userLon = pos.coords.longitude;
+  const acc = Math.round(pos.coords.accuracy);
+
+  document.getElementById('gps-error').style.display = 'none';
+  document.getElementById('disp-lat').textContent = userLat.toFixed(6);
+  document.getElementById('disp-lon').textContent = userLon.toFixed(6);
+
+  // Accuracy ring visiva
+  const ring = document.getElementById('acc-ring');
+  const mPerPx = COMPASS_SCALE_M / compassRadius;
+  const ringPx = acc / mPerPx;
+  ring.style.width  = (ringPx * 2) + 'px';
+  ring.style.height = (ringPx * 2) + 'px';
+  ring.style.opacity = '1';
+
+  updateAllDestinations();
+}
+
+function onGPSError(err) {
+  document.getElementById('gps-error').style.display = 'block';
+  document.getElementById('status-bar').textContent = 'SEGNALE GPS PERSO';
+}
+
+// ═══════════════════════════════════════════════
+// BUSSOLA / ORIENTAMENTO
+// ═══════════════════════════════════════════════
+function initCompass() {
+  // Genera ticks
+  const ticksG = document.getElementById('ticks');
+  for (let deg = 0; deg < 360; deg += 5) {
+    const rad = (deg - 90) * Math.PI / 180;
+    const r1 = deg % 30 === 0 ? 168 : deg % 10 === 0 ? 173 : 177;
+    const r2 = 188;
+    const x1 = 200 + r1 * Math.cos(rad);
+    const y1 = 200 + r1 * Math.sin(rad);
+    const x2 = 200 + r2 * Math.cos(rad);
+    const y2 = 200 + r2 * Math.sin(rad);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', deg % 30 === 0 ? 'rgba(0,255,65,0.6)' : 'rgba(0,255,65,0.25)');
+    line.setAttribute('stroke-width', deg % 30 === 0 ? '2' : '1');
+    ticksG.appendChild(line);
+  }
+}
+
+function startCompassSensor() {
+  // DeviceOrientationEvent (iOS 13+ requires permission)
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(state => {
+        if (state === 'granted') listenOrientation();
+      }).catch(console.warn);
+  } else if (window.DeviceOrientationEvent) {
+    listenOrientation();
+  }
+}
+
+function listenOrientation() {
+  window.addEventListener('deviceorientationabsolute', onOrientation, true);
+  window.addEventListener('deviceorientation', onOrientation, true);
+}
+
+function onOrientation(e) {
+  let h = 0;
+
+  if (e.absolute && e.alpha !== null) {
+    h = 360 - e.alpha; // alpha=0 is North for absolute
+  } else if (e.webkitCompassHeading !== undefined) {
+    h = e.webkitCompassHeading; // iOS
+  } else if (e.alpha !== null) {
+    h = 360 - e.alpha;
+  }
+
+  heading = (h + 360) % 360;
+  document.getElementById('heading-display').textContent = Math.round(heading) + '°';
+  document.getElementById('compass-svg').style.transform = `rotate(${-heading}deg)`;
+
+  updateWaypointPositions();
+}
+
+// ═══════════════════════════════════════════════
+// CALCOLI GEOGRAFICI
+// ═══════════════════════════════════════════════
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function bearingTo(lat1, lon1, lat2, lon2) {
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI/180);
+  const x = Math.cos(lat1 * Math.PI/180) * Math.sin(lat2 * Math.PI/180) -
+             Math.sin(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.cos(dLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+// ═══════════════════════════════════════════════
+// WAYPOINTS (DOM markers sulla bussola)
+// ═══════════════════════════════════════════════
+function buildWaypoints() {
+  const layer = document.getElementById('waypoints-layer');
+  layer.innerHTML = '';
+
+  DESTINATIONS.forEach(dest => {
+    if (foundIds.has(dest.id)) return;
+
+    const el = document.createElement('div');
+    el.className = 'waypoint';
+    el.id = 'wp-' + dest.id;
+    el.innerHTML = `
+      <div class="waypoint-inner">
+        <div class="waypoint-diamond" style="background:${dest.color}; box-shadow: 0 0 8px ${dest.color}, 0 0 15px ${dest.color}44;"></div>
+        <div class="waypoint-label" style="color:${dest.color}; text-shadow: 0 0 6px ${dest.color};">${dest.name}</div>
+      </div>`;
+    layer.appendChild(el);
+  });
+
+  updateWaypointPositions();
+}
+
+function updateWaypointPositions() {
+  if (!compassSize) return;
+
+  const activeDestinations = DESTINATIONS.filter(d => !foundIds.has(d.id));
+  const r = compassRadius;
+
+  activeDestinations.forEach(dest => {
+    const el = document.getElementById('wp-' + dest.id);
+    if (!el) return;
+
+    if (userLat === null) {
+      // No GPS yet — spread around compass edge
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+
+    const dist = haversineDistance(userLat, userLon, dest.lat, dest.lon);
+    const bearing = bearingTo(userLat, userLon, dest.lat, dest.lon);
+
+    // Angolo relativo al device heading (bussola ruota)
+    const relAngle = (bearing - heading + 360) % 360;
+    const rad = relAngle * Math.PI / 180;
+
+    // Distanza in pixel (clamped al bordo della bussola)
+    const maxDist = COMPASS_SCALE_M;
+    const clampedDist = Math.min(dist, maxDist);
+    const distPx = (clampedDist / maxDist) * (r - 30); // lascia margine
+
+    const cx = r + distPx * Math.sin(rad);
+    const cy = r - distPx * Math.cos(rad);
+
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+
+    // Evidenzia se vicino
+    if (dist <= PROXIMITY_NEAR) {
+      el.classList.add('near');
+    } else {
+      el.classList.remove('near');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// UPDATE LOOP — aggiornamento completo
+// ═══════════════════════════════════════════════
+function updateAllDestinations() {
+  if (userLat === null) return;
+
+  let statusMsg = '';
+  let nearestDist = Infinity;
+  let nearestName = '';
+
+  // Prossimo obiettivo = il primo non ancora trovato, in ordine
+const nextDest = DESTINATIONS.find(d => !foundIds.has(d.id));
+
+DESTINATIONS.forEach(dest => {
+    if (foundIds.has(dest.id)) return;
+
+    const dist = haversineDistance(userLat, userLon, dest.lat, dest.lon);
+
+    if (dest.id === nextDest.id) {
+      nearestDist = dist;
+      nearestName = dest.name;
+    }
+
+    // Audio
+    updateProximityAudio(dest.id, dist);
+
+    // Arrivo
+    if (dist <= ARRIVAL_RADIUS && activePopupId === null) {
+      triggerArrival(dest);
+    }
+
+    // Chip aggiornamento
+    updateChip(dest.id, dist);
+  });
+
+  // Status bar
+  if (nearestDist < Infinity) {
+    if (nearestDist <= ARRIVAL_RADIUS) {
+      statusMsg = `🎯 ${nearestName} — OBIETTIVO RAGGIUNTO!`;
+    } else if (nearestDist <= PROXIMITY_NEAR) {
+      statusMsg = `⚠ ${nearestName} — ${Math.round(nearestDist)}m — AVVICINARSI`;
+    } else {
+      statusMsg = `► PROSSIMO: ${nearestName} — ${Math.round(nearestDist)}m`;
+    }
+  } else {
+    statusMsg = 'TUTTI GLI OBIETTIVI COMPLETATI';
+  }
+
+  document.getElementById('status-bar').textContent = statusMsg;
+
+  updateWaypointPositions();
+}
+
+function updateChip(id, dist) {
+  const chip = document.getElementById('chip-' + id);
+  if (!chip) return;
+  chip.classList.remove('active', 'near');
+  if (dist <= PROXIMITY_NEAR) chip.classList.add('near');
+  else if (dist <= 50) chip.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// TARGET LIST (bottom)
+// ═══════════════════════════════════════════════
+function buildTargetList() {
+  const list = document.getElementById('targets-list');
+  list.innerHTML = '';
+  DESTINATIONS.forEach(dest => {
+    if (!foundIds.has(dest.id)) return; // mostra solo i trovati
+    const chip = document.createElement('div');
+    chip.className = 'target-chip found';
+    chip.id = 'chip-' + dest.id;
+    chip.style.borderColor = dest.color;
+    chip.style.color = dest.color;
+    chip.innerHTML = `<span class="chip-dot" style="background:${dest.color}"></span>${dest.name} ✓`;
+    list.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ARRIVO + POPUP
+// ═══════════════════════════════════════════════
+function triggerArrival(dest) {
+  activePopupId = dest.id;
+  stopSound(dest.id);
+
+  // Aggiorna popup
+  document.getElementById('popup-title').textContent = dest.name;
+  document.getElementById('popup-number').textContent = dest.id;
+  document.getElementById('popup-coords').textContent = `${dest.lat.toFixed(6)}, ${dest.lon.toFixed(6)}`;
+
+  // Tenta di caricare PDF da file (se presenti)
+  const pdfFrame = document.getElementById('popup-pdf-frame');
+  const fallback = document.getElementById('popup-pdf-fallback');
+
+  // Controlla se esiste un PDF nella stessa cartella
+  const pdfPath = `punto${dest.id}.pdf`;
+  fetch(pdfPath, { method: 'HEAD' })
+    .then(res => {
+      if (res.ok) {
+        if (!pdfFrame.parentNode) fallback.parentNode.insertBefore(pdfFrame, fallback);
+        pdfFrame.src = pdfPath;
+        pdfFrame.style.display = 'block';
+        fallback.style.display = 'none';
+      } else {
+        showFallback();
+      }
+    })
+    .catch(() => showFallback());
+
+  function showFallback() {
+    pdfFrame.style.display = 'none';
+    fallback.style.display = 'flex';
+  }
+
+  document.getElementById('popup-overlay').classList.add('active');
+}
+
+document.getElementById('popup-close').addEventListener('click', closePopup);
+document.getElementById('popup-confirm').addEventListener('click', confirmArrival);
+
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('active');
+  activePopupId = null;
+}
+
+function confirmArrival() {
+  if (activePopupId === null) return;
+  const id = activePopupId;
+  foundIds.add(id);
+
+  // Aggiorna chip
+  buildTargetList();
+
+  closePopup();
+  buildWaypoints();
+
+  // Controlla vittoria
+  const remaining = DESTINATIONS.filter(d => !foundIds.has(d.id));
+  if (remaining.length === 0) {
+    setTimeout(showVictory, 800);
+  } else {
+    stopAllSounds();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// VICTORY
+// ═══════════════════════════════════════════════
+function showVictory() {
+  stopAllSounds();
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+
+  const grid = document.getElementById('victory-grid');
+  grid.innerHTML = '';
+  DESTINATIONS.forEach((dest, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'victory-chip';
+    chip.style.animationDelay = (i * 0.15) + 's';
+    chip.textContent = dest.name + ' ✓';
+    grid.appendChild(chip);
+  });
+
+  document.getElementById('victory').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// RADAR SWEEP ANIMATION
+// ═══════════════════════════════════════════════
+let radarAngle = 0;
+let radarCtx = null;
+
+function initRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  const container = document.getElementById('compass-container');
+  const size = container.getBoundingClientRect().width || 300;
+
+  canvas.width = size;
+  canvas.height = size;
+  radarCtx = canvas.getContext('2d');
+
+  if (!radarCtx._animating) {
+    radarCtx._animating = true;
+    requestAnimationFrame(drawRadar);
+  }
+}
+
+function drawRadar() {
+  if (!radarCtx) { requestAnimationFrame(drawRadar); return; }
+
+  const canvas = radarCtx.canvas;
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, r = w/2;
+
+  radarCtx.clearRect(0, 0, w, h);
+
+  // Sweep gradient
+  const sweepGrad = radarCtx.createConicalGradient
+    ? radarCtx.createConicalGradient(radarAngle, cx, cy)
+    : null;
+
+  radarCtx.save();
+  radarCtx.beginPath();
+  radarCtx.moveTo(cx, cy);
+  radarCtx.arc(cx, cy, r, radarAngle - 0.01, radarAngle + Math.PI * 0.6);
+  radarCtx.closePath();
+
+  const grad = radarCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, 'rgba(0,255,65,0.08)');
+  grad.addColorStop(1, 'rgba(0,255,65,0)');
+
+  radarCtx.fillStyle = grad;
+  radarCtx.fill();
+  radarCtx.restore();
+
+  // Sweep line
+  radarCtx.save();
+  radarCtx.beginPath();
+  radarCtx.moveTo(cx, cy);
+  radarCtx.lineTo(
+    cx + r * Math.cos(radarAngle),
+    cy + r * Math.sin(radarAngle)
+  );
+  radarCtx.strokeStyle = 'rgba(0,255,65,0.4)';
+  radarCtx.lineWidth = 1.5;
+  radarCtx.stroke();
+  radarCtx.restore();
+
+  radarAngle += 0.02;
+  if (radarAngle > Math.PI * 2) radarAngle -= Math.PI * 2;
+
+  requestAnimationFrame(drawRadar);
+}
+
+// ═══════════════════════════════════════════════
+// AVVIO
+// ═══════════════════════════════════════════════
+runBoot();
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+  });
+}
+</script>
+</body>
+</html>
