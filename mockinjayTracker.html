@@ -809,7 +809,6 @@
       <div id="popup-pdf-fallback">
         <div class="dest-number" id="popup-number">1</div>
         <div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
-        <div class="dest-coords" id="popup-coords"></div>
       </div>
     </div>
     <div id="popup-footer">
@@ -825,8 +824,8 @@
     <div class="v-ring"></div><div class="v-ring"></div>
     <div class="v-star">★</div>
   </div>
-  <div id="victory-title">MISSIONE COMPLETATA</div>
-  <div id="victory-subtitle">TUTTI GLI OBIETTIVI RAGGIUNTI</div>
+  <div id="victory-title">RICERCA COMPLETATA</div>
+  <div id="victory-subtitle">VAI DAGLI ORGANIZZATORI E Dì "CHI Sà ASCOLTARE Sà CERCARE"</div>
   <div id="victory-grid"></div>
 </div>
 
@@ -1263,7 +1262,6 @@ function triggerArrival(dest) {
   // Aggiorna popup
   document.getElementById('popup-title').textContent = dest.name;
   document.getElementById('popup-number').textContent = dest.id;
-  document.getElementById('popup-coords').textContent = `${dest.lat.toFixed(6)}, ${dest.lon.toFixed(6)}`;
 
   // Tenta di caricare PDF da file (se presenti)
   const pdfFrame = document.getElementById('popup-pdf-frame');
