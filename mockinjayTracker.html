@@ -153,11 +153,12 @@
     .hud-value { font-size: 0.85rem; color: var(--green); letter-spacing: 1px; }
 
     #heading-display {
-	 font-family: 'Share Tech Mono', monospace;
-	 font-size: 0.75rem;
-	 font-weight: 400;
-	 color: var(--green);
-	 letter-spacing: 1px;
+	  font-family: 'Orbitron', monospace;
+	  font-size: 1.1rem;
+	  font-weight: 700;
+	  color: var(--green);
+	  text-shadow: 0 0 15px var(--green);
+	  letter-spacing: 1px;
 	}
 
     /* COMPASS AREA */
@@ -1175,22 +1176,24 @@ function updateAllDestinations() {
   let nearestDist = Infinity;
   let nearestName = '';
 
+  const nextDest = DESTINATIONS.find(d => !foundIds.has(d.id));
+
   DESTINATIONS.forEach(dest => {
     if (foundIds.has(dest.id)) return;
 
     const dist = haversineDistance(userLat, userLon, dest.lat, dest.lon);
 
-    if (dist < nearestDist) {
+    if (dest.id === nextDest.id) {
       nearestDist = dist;
       nearestName = dest.name;
     }
 
-    // Audio
-    updateProximityAudio(dest.id, dist);
-
-    // Arrivo
-    if (dist <= ARRIVAL_RADIUS && activePopupId === null) {
-      triggerArrival(dest);
+    // Audio e arrivo solo per il prossimo punto in ordine
+    if (dest.id === nextDest.id) {
+      updateProximityAudio(dest.id, dist);
+      if (dist <= ARRIVAL_RADIUS && activePopupId === null) {
+        triggerArrival(dest);
+      }
     }
 
     // Chip aggiornamento
