@@ -430,6 +430,13 @@
       margin-top: 8px;
     }
 
+	#popup-image {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+	  display: block;
+    }
+
     #popup-footer {
       padding: 12px 18px;
       border-top: 1px solid rgba(0,255,65,0.3);
@@ -799,7 +806,8 @@
     <div id="popup-content">
       <div id="popup-pdf-fallback">
         <div class="dest-number" id="popup-number">1</div>
-        <div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
+	    <div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
+	    <img id="popup-image" src="" alt="" />
       </div>
     </div>
     <div id="popup-footer">
@@ -825,7 +833,8 @@
 // CONFIGURAZIONE DESTINAZIONI
 // ═══════════════════════════════════════════════
 const DESTINATIONS = [
-  { id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d" },
+  // { id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d" },
+  { id: 1, name: "PUNTO 1", lat: 41.511940, lon: 13.668896, color: "#ff2d2d" },
   { id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00" },
   { id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff" },
   { id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41" },
@@ -1258,6 +1267,7 @@ function triggerArrival(dest) {
   // Aggiorna popup
   document.getElementById('popup-title').textContent = dest.name;
   document.getElementById('popup-number').textContent = dest.id;
+  document.getElementById('popup-image').src = `foto${dest.id}.jpg`;
 
   // Tenta di caricare PDF da file (se presenti)
   const pdfFrame = document.getElementById('popup-pdf-frame');
