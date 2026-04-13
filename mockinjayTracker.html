@@ -458,6 +458,15 @@
     }
 
     #popup-confirm:hover { box-shadow: 0 0 20px var(--green); }
+	
+	.dest-messaggio {
+		font-size: 0.85rem;
+		color: var(--green);
+		text-align: center;
+		letter-spacing: 1px;
+		line-height: 1.6;
+		padding: 10px 20px;
+	}
 
     /* VICTORY SCREEN */
     #victory {
@@ -805,10 +814,10 @@
     </div>
     <div id="popup-content">
       <div id="popup-pdf-fallback">
-        <div class="dest-number" id="popup-number">1</div>
-	    <div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
-	    <img id="popup-image" src="" alt="" />
-      </div>
+		<div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
+		<div class="dest-messaggio" id="popup-messaggio"></div>
+		<img id="popup-image" src="" alt="" />
+	  </div>
     </div>
     <div id="popup-footer">
       <button id="popup-confirm">CONFERMA OBIETTIVO</button>
@@ -834,12 +843,12 @@
 // ═══════════════════════════════════════════════
 const DESTINATIONS = [
   // { id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d" },
-  { id: 1, name: "PUNTO 1", lat: 41.511940, lon: 13.668896, color: "#ff2d2d" },
-  { id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00" },
-  { id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff" },
-  { id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41" },
-  { id: 5, name: "PUNTO 5", lat: 41.456450, lon: 13.666765, color: "#cc44ff" },
-  { id: 6, name: "PUNTO 6", lat: 41.458565, lon: 13.664333, color: "#ffffff" }
+  { id: 1, name: "PUNTO 1", lat: 41.511940, lon: 13.668896, color: "#ff2d2d", messaggio: "Io canto da N a W" },
+  { id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00", messaggio: "Io canto da W a S" },
+  { id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff", messaggio: "Io rispondo alla ghiandaia 1 e canto verso S" },
+  { id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41", messaggio: "Io rispondo alla ghiandaia 2 e canto verso E" },
+  { id: 5, name: "PUNTO 5", lat: 41.456450, lon: 13.666765, color: "#cc44ff", messaggio: "Io rispondo alla ghiandaia 3 e canto da N a E" },
+  { id: 6, name: "PUNTO 6", lat: 41.458565, lon: 13.664333, color: "#ffffff", messaggio: "Io rispondo alla ghiandaia 5 e canto verso N" }
   //{ id: 1, name: "PUNTO 1", lat: 41.511746, lon: 13.669055, color: "#ff2d2d" },
   //{ id: 2, name: "PUNTO 2", lat: 41.511315, lon: 13.668399, color: "#ffee00" },
   //{ id: 3, name: "PUNTO 3", lat: 41.511044, lon: 13.668311, color: "#2d7fff" },
@@ -1266,7 +1275,7 @@ function triggerArrival(dest) {
 
   // Aggiorna popup
   document.getElementById('popup-title').textContent = dest.name;
-  document.getElementById('popup-number').textContent = dest.id;
+  document.getElementById('popup-messaggio').textContent = dest.messaggio;
   document.getElementById('popup-image').src = `foto${dest.id}.jpg`;
 
   // Tenta di caricare PDF da file (se presenti)
