@@ -322,15 +322,6 @@
 
     .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* STATUS BAR */
-    #status-bar {
-      text-align: center;
-      font-size: 0.6rem;
-      color: var(--green-dim);
-      letter-spacing: 2px;
-      margin-top: 6px;
-      height: 14px;
-    }
 
     /* POPUP OVERLAY */
     #popup-overlay {
@@ -707,9 +698,9 @@
       <span class="hud-value" id="disp-lat">---.------</span>
     </div>
     <div class="hud-block" style="text-align:center">
-      <span class="hud-label">ROTTA</span>
-      <span id="heading-display">---°</span>
-    </div>
+		<span class="hud-label">PROSSIMO PUNTO</span>
+		<span id="heading-display" style="font-size:0.75rem; letter-spacing:1px;">---</span>
+	</div>
     <div class="hud-block" style="text-align:right">
       <span class="hud-label">LON</span>
       <span class="hud-value" id="disp-lon">---.------</span>
@@ -791,7 +782,6 @@
   <!-- BOTTOM HUD -->
   <div id="hud-bottom">
     <div id="targets-list"></div>
-    <div id="status-bar">IN ATTESA DI SEGNALE GPS...</div>
   </div>
 </div>
 
@@ -1221,7 +1211,11 @@ function updateAllDestinations() {
     statusMsg = 'TUTTI GLI OBIETTIVI COMPLETATI';
   }
 
-  document.getElementById('status-bar').textContent = statusMsg;
+	if (nearestDist < Infinity) {
+		document.getElementById('heading-display').textContent = nearestName + ' — ' + Math.round(nearestDist) + 'm';
+	} else {
+		document.getElementById('heading-display').textContent = 'COMPLETATO';
+	}
 
   updateWaypointPositions();
 }
