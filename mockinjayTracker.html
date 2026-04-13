@@ -1071,7 +1071,6 @@ function onOrientation(e) {
   }
 
   heading = (h + 360) % 360;
-  document.getElementById('heading-display').textContent = Math.round(heading) + '°';
   document.getElementById('compass-svg').style.transform = `rotate(${-heading}deg)`;
 
   updateWaypointPositions();
