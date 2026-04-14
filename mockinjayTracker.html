@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MOCKINJAY TRACKER" />
+  <link rel="icon" href="ISDF_logo.ico" type="image/x-icon">
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>MOCKINJAY TRACKER</title>
@@ -814,7 +815,7 @@
     </div>
     <div id="popup-content">
       <div id="popup-pdf-fallback">
-		<div class="dest-label">DESTINAZIONE RAGGIUNTA</div>
+		<div class="dest-label" id="popup-dest-label">GHIANDAIA IMITATRICE TROVATA</div>
 		<div class="dest-messaggio" id="popup-messaggio"></div>
 		<img id="popup-image" src="" alt="" />
 	  </div>
@@ -833,8 +834,9 @@
     <div class="v-star">★</div>
   </div>
   <div id="victory-title">RICERCA COMPLETATA</div>
-  <div id="victory-subtitle">VAI DAGLI ORGANIZZATORI E Dì "CHI Sà ASCOLTARE Sà CERCARE"</div>
-  <div id="victory-grid"></div>
+<div id="victory-subtitle">HAI INDIVIDUATO TUTTE LE GHIANDAIE IMITATRICI</div>
+<img id="victory-image" src="scatola.jpg" alt="" style="width:100%; max-width:320px; max-height:250px; object-fit:cover; margin:10px 0;" />
+<div id="victory-grid"></div>
 </div>
 
 <script>
@@ -842,19 +844,18 @@
 // CONFIGURAZIONE DESTINAZIONI
 // ═══════════════════════════════════════════════
 const DESTINATIONS = [
-  // { id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d" },
-  { id: 1, name: "PUNTO 1", lat: 41.511940, lon: 13.668896, color: "#ff2d2d", messaggio: "Io canto da N a W" },
-  { id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00", messaggio: "Io canto da W a S" },
-  { id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff", messaggio: "Io rispondo alla ghiandaia 1 e canto verso S" },
-  { id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41", messaggio: "Io rispondo alla ghiandaia 2 e canto verso E" },
-  { id: 5, name: "PUNTO 5", lat: 41.456450, lon: 13.666765, color: "#cc44ff", messaggio: "Io rispondo alla ghiandaia 3 e canto da N a E" },
-  { id: 6, name: "PUNTO 6", lat: 41.458565, lon: 13.664333, color: "#ffffff", messaggio: "Io rispondo alla ghiandaia 5 e canto verso N" }
-  //{ id: 1, name: "PUNTO 1", lat: 41.511746, lon: 13.669055, color: "#ff2d2d" },
-  //{ id: 2, name: "PUNTO 2", lat: 41.511315, lon: 13.668399, color: "#ffee00" },
-  //{ id: 3, name: "PUNTO 3", lat: 41.511044, lon: 13.668311, color: "#2d7fff" },
-  //{ id: 4, name: "PUNTO 4", lat: 41.511854, lon: 13.668573, color: "#00ff41" },
-  //{ id: 5, name: "PUNTO 5", lat: 41.512032, lon: 13.668830, color: "#cc44ff" },
-  //{ id: 6, name: "PUNTO 6", lat: 41.512018, lon: 13.668428, color: "#ffffff" }
+  //{ id: 1, name: "PUNTO 1", lat: 41.458815, lon: 13.666110, color: "#ff2d2d", messaggio: "Io canto da N a W" },
+  //{ id: 2, name: "PUNTO 2", lat: 41.457148, lon: 13.665289, color: "#ffee00", messaggio: "Io canto da W a S" },
+  //{ id: 3, name: "PUNTO 3", lat: 41.459944, lon: 13.667164, color: "#2d7fff", messaggio: "Io rispondo alla ghiandaia 1 e canto verso S" },
+  //{ id: 4, name: "PUNTO 4", lat: 41.458644, lon: 13.668431, color: "#00ff41", messaggio: "Io rispondo alla ghiandaia 2 e canto verso E" },
+  //{ id: 5, name: "PUNTO 5", lat: 41.456450, lon: 13.666765, color: "#cc44ff", messaggio: "Io rispondo alla ghiandaia 3 e canto da N a W" },
+  //{ id: 6, name: "PUNTO 6", lat: 41.458565, lon: 13.664333, color: "#ffffff", messaggio: "Io rispondo alla ghiandaia 5 e canto verso S" }
+  { id: 1, name: "PUNTO 1", lat: 41.511746, lon: 13.669055, color: "#ff2d2d", messaggio: "Io canto da N a W" },
+  { id: 2, name: "PUNTO 2", lat: 41.511315, lon: 13.668399, color: "#ffee00", messaggio: "Io canto da W a S" },
+  { id: 3, name: "PUNTO 3", lat: 41.511044, lon: 13.668311, color: "#2d7fff", messaggio: "Io rispondo alla ghiandaia 1 e canto verso S" },
+  { id: 4, name: "PUNTO 4", lat: 41.511854, lon: 13.668573, color: "#00ff41", messaggio: "Io rispondo alla ghiandaia 2 e canto verso E" },
+  { id: 5, name: "PUNTO 5", lat: 41.512032, lon: 13.668830, color: "#cc44ff", messaggio: "Io rispondo alla ghiandaia 3 e canto da N a W" },
+  { id: 6, name: "PUNTO 6", lat: 41.512018, lon: 13.668428, color: "#ffffff", messaggio: "Io rispondo alla ghiandaia 5 e canto verso S" }
 ];
 
 // Soglie prossimità (metri)
@@ -1194,24 +1195,19 @@ function updateAllDestinations() {
   let nearestDist = Infinity;
   let nearestName = '';
 
-  const nextDest = DESTINATIONS.find(d => !foundIds.has(d.id));
-
   DESTINATIONS.forEach(dest => {
     if (foundIds.has(dest.id)) return;
 
     const dist = haversineDistance(userLat, userLon, dest.lat, dest.lon);
 
-    if (dest.id === nextDest.id) {
+    if (dist < nearestDist) {
       nearestDist = dist;
       nearestName = dest.name;
     }
 
-    // Audio e arrivo solo per il prossimo punto in ordine
-    if (dest.id === nextDest.id) {
-      updateProximityAudio(dest.id, dist);
-      if (dist <= ARRIVAL_RADIUS && activePopupId === null) {
-        triggerArrival(dest);
-      }
+    updateProximityAudio(dest.id, dist);
+    if (dist <= ARRIVAL_RADIUS && activePopupId === null) {
+      triggerArrival(dest);
     }
 
     // Chip aggiornamento
@@ -1276,6 +1272,7 @@ function triggerArrival(dest) {
   // Aggiorna popup
   document.getElementById('popup-title').textContent = dest.name;
   document.getElementById('popup-messaggio').textContent = dest.messaggio;
+  document.getElementById('popup-dest-label').textContent = `GHIANDAIA IMITATRICE ${dest.id} TROVATA`;
   document.getElementById('popup-image').src = `foto${dest.id}.jpg`;
 
   // Tenta di caricare PDF da file (se presenti)
